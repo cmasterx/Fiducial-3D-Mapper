@@ -14,4 +14,4 @@ $ pip install pyrender
 ```
 
 ## Sources
-- Bunny OBJ - Stanford Model
+- Bunny OBJ: http://www.kunzhou.net/tex-models.htm
