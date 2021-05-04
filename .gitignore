@@ -127,3 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# video directory
+video/
+
+# calibration files
+*.pckl
+
+# json settings file
+/settings.json
+/pixel3.json
+
+# test python files
+/test*.py

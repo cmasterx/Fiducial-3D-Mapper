@@ -7,7 +7,7 @@ from ipcamera import IPCamera
 OUT_DIR = './video'
 # CAMERA_SOURCE = 1
 # CAMERA_SOURCE = 'http://192.168.4.24:8080/video'
-CAMERA_SOURCE = 2
+CAMERA_SOURCE = 0
 
 if '__main__' in __name__:
     # camera = cv2.VideoCapture('http://192.168.4.24:8080/video')
