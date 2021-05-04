@@ -1,6 +1,7 @@
 import os
 import pickle
 import cv2
+from numpy.lib.type_check import _real_dispatcher
 from trimesh.visual import color
 import cv2.aruco as aruco
 import glm
@@ -31,17 +32,49 @@ def py4tomat4(mat:np.array) -> glm.mat4:
             n[c,r] = mat[r,c]
     return n
 
-def draw_cube(img, marker_length, int_mtx, ext_mtx):
+def draw_cube_img(img, marker_length, int_mtx, ext_mtx):
     half_length = marker_length / 2
+    cam_mtx = np.matmul(int_mtx, ext_mtx)
 
-    lines = []
+    lines_3D = []
+    colors = []
+    thicknesses = []
 
-    lines.append([(-half_length,  half_length, 0), (-half_length,  half_length, marker_length)])
-    lines.append([( half_length,  half_length, 0), ( half_length,  half_length, marker_length)])
-    lines.append([( half_length, -half_length, 0), ( half_length, -half_length, marker_length)])
-    lines.append([(-half_length, -half_length, 0), (-half_length, -half_length, marker_length)])
+    # vertical lines
+    lines_3D.append([(-half_length,  half_length, 0), (-half_length,  half_length, marker_length)])
+    lines_3D.append([( half_length,  half_length, 0), ( half_length,  half_length, marker_length)])
+    lines_3D.append([( half_length, -half_length, 0), ( half_length, -half_length, marker_length)])
+    lines_3D.append([(-half_length, -half_length, 0), (-half_length, -half_length, marker_length)])
 
-    # for i in range
+    # blue lines with thickness of 3
+    for i in range(4):
+        colors.append((255,0,0))
+        thicknesses.append(3)
+
+    # horizontal lines
+    lines_3D.append([(-half_length,  half_length, marker_length), ( half_length,  half_length, marker_length)])
+    lines_3D.append([( half_length,  half_length, marker_length), ( half_length, -half_length, marker_length)])
+    lines_3D.append([( half_length, -half_length, marker_length), (-half_length, -half_length, marker_length)])
+    lines_3D.append([(-half_length, -half_length, marker_length), (-half_length,  half_length, marker_length)])
+
+    # green lines with thickness of 3
+    for i in range(4):
+        colors.append((0,255,0))
+        thicknesses.append(3)
+
+
+    lines_2D = []
+    for line in lines_3D:
+
+        single_line_2D = []
+        for point in line:
+            point = np.matmul(cam_mtx, np.append(point, [1]))
+            single_line_2D.append((int(point[0] / point[2]), int(point[1] / point[2])))
+        
+        lines_2D.append(single_line_2D)
+    
+    for i, line in enumerate(lines_2D):
+        cv2.line(img, line[0], line[1], colors[i], thicknesses[i])
     
 def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=False):
 
@@ -49,12 +82,16 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
     ARUCO_PARAMS = aruco.DetectorParameters_create()
     ARUCO_DICT = aruco.Dictionary_get(aruco.DICT_6X6_250)
 
-    MODEL_MTX = np.array(glm.rotate(glm.mat4(), glm.radians(90), (1, 0, 0)))
+    # initialization
+    last_text = ""
+
+    # MODEL_MTX = np.array(glm.rotate(glm.mat4(), glm.radians(90), (1, 0, 0)))
 
     # FLAGS
     draw_axis = False
     draw_bunny = True
     draw_lines = False
+    draw_cube = False
     record = False
     was_recording = False
     
@@ -120,8 +157,7 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
     scene.set_pose(bunny_node, pose=bunny_mtx)
 
     ### ground
-    ground_points = [[]]
-    pyrender.Mesh.from_points()
+    # pyrender.Mesh.from_points()
 
     ## lighting
     light = pyrender.PointLight((255, 245, 182), intensity=500)
@@ -153,7 +189,7 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
 
 
                 img_draw = aruco.drawDetectedMarkers(img_draw, corners, borderColor=(0, 0, 255))
-                rvec, tvec, _objPoints = aruco.estimatePoseSingleMarkers(corners, 1.5, cameraMatrix, distCoeffs)
+                rvec, tvec, _objPoints = aruco.estimatePoseSingleMarkers(corners, marker_size, cameraMatrix, distCoeffs)
                 rvec_corrected = np.copy(rvec[0,0])
                 rvec_corrected[1] *= -1
                 rvec_corrected[2] *= -1
@@ -167,6 +203,12 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
                 ext_mtx[0:3,3] = tvec[0,0]
                 # ext_mtx[0:3, 0:4] = np.column_stack((rvec_mat, np.array(tvec[0,0])))
                 
+                # relative matrix
+                rel_mtx = np.zeros((3,4))
+                _rel_mat, _ = cv2.Rodrigues(rvec[0,0])
+                rel_mtx[0:3,0:3] = _rel_mat
+                rel_mtx[0:3,3] = tvec[0,0]
+                # ext_mtx[0:3, 0:4] = np.colu
                 
                 # new_bunny_mtx = np.matmul(ext_mtx, np.eye(4))
                 # scene.set_pose(bunny_node, new_bunny_mtx)
@@ -202,30 +244,17 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
                     # combine the image with the 3D render
                     img_draw = cv2.add(draw_img_bg, color_render_fg[:,:,0:3])
                     
-                
-                # roi = img_draw[]
-                
-                # img_draw = img_draw + color_render
-                # plt.imshow(color_render)
-                # plt.show()
-                
-                # draw a normal line
-                p0 = np.array([-0.75, 0.75, 0, 1])
-                p1 = np.array([-0.75, 0.75, 1, 1])
-                p0 = np.matmul(np.matmul(cameraMatrix, ext_mtx), p0)
-                p1 = np.matmul(np.matmul(cameraMatrix, ext_mtx), p1)
-                # p0 = np.matmul(ext_mtx, p0)
-                # p1 = np.matmul(ext_mtx, p1)
-                # p0 = np.matmul(camera_mat, p0)
-                # p1 = np.matmul(camera_mat, p1)
-                print(p1)
-                p0 = (int(p0[0]/p0[2]), int(p0[1]/p0[2]))
-                p1 = (int(p1[0]/p1[2]), int(p1[1]/p1[2]))
-                
-                img_draw = cv2.line(img_draw, p0, p1, color=(0, 0, 255), thickness=3)
+                if draw_cube:
+                    # draws a cube
+                    draw_cube_img(img_draw, marker_size, cameraMatrix, rel_mtx)
                 
                 if draw_axis:
                     img_draw = aruco.drawAxis(img_draw, cameraMatrix, distCoeffs, rvec[0,0], tvec[0,0], 1)
+
+            # prints distance and enabled features
+            point = np.matmul(rel_mtx, (0,0,0))
+            real_distance = glm.distance(point, glm.vec3(0,0,0))
+            new_string = '\rDraw Bunny ("b"): [{}] - Draw Cube ("c"): [{}] - Draw Axis ("a"): [{}] - Distance to marker: {} {}'.format(draw_bunny, draw_cube, draw_axis, real_distance, marker_units)
 
             # draw image
             cv2.imshow('Feed', img_draw)
@@ -241,12 +270,15 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
                 draw_axis = not draw_axis
             elif key_press == ord('b'):
                 draw_bunny = not draw_bunny
+            elif key_press == ord('c'):
+                draw_cube = not draw_cube
             elif key_press == ord('r'):
                 record = not record
 
                 if record:
+                    pass
                     # if recording has just been enabled, create video writer
-                    video_writer
+                    # video_writer
 
 
 if '__main__' in __name__:
