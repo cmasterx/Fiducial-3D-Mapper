@@ -251,10 +251,13 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
                 if draw_axis:
                     img_draw = aruco.drawAxis(img_draw, cameraMatrix, distCoeffs, rvec[0,0], tvec[0,0], 1)
 
-            # prints distance and enabled features
-            point = np.matmul(rel_mtx, (0,0,0))
-            real_distance = glm.distance(point, glm.vec3(0,0,0))
-            new_string = '\rDraw Bunny ("b"): [{}] - Draw Cube ("c"): [{}] - Draw Axis ("a"): [{}] - Distance to marker: {} {}'.format(draw_bunny, draw_cube, draw_axis, real_distance, marker_units)
+                # prints distance and enabled features
+                point = np.matmul(rel_mtx, np.array([0,0,0,1]))
+                real_distance = glm.distance(glm.vec3(point), glm.vec3(0,0,0))
+                new_string = 'Draw Bunny ("b"): [{}] - Draw Cube ("c"): [{}] - Draw Axis ("a"): [{}] - Distance to marker: {:.3f} {}\r'.format(draw_bunny, draw_cube, draw_axis, real_distance, marker_units)
+                sys.stdout.write('{}\r'.format(' ' * len(last_text)))
+                sys.stdout.write(new_string)
+                last_text = new_string
 
             # draw image
             cv2.imshow('Feed', img_draw)
