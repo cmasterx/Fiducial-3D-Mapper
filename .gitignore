@@ -140,3 +140,6 @@ video/
 
 # test python files
 /test*.py
+
+# submission files
+/submission
