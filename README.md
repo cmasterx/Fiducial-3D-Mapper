@@ -1,8 +1,12 @@
 # Fiducial 3D Mapper
-This software extracts translation and rotation transformations from ArUco markers to render 3D objects on top of a video source and determine distance betwen the center of the camera and the center of the marker.
+Proof of concept software that extracts translation and rotation transformations from ArUco markers to render 3D objects on top of a video source and determine the distance betwen the center of the camera and the center of the marker.
 
-Augmented Reality - extracting 
+## Demo
+### Bunny
+Bunny render with Pyrender
 ![bunny-demo](bunny.gif)
+### Cube
+Cube render by transformation of points in 3D object space to image pixel space
 ![cube-demo](cube.gif)
 
 ## Installation
