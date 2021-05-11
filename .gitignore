@@ -140,6 +140,7 @@ video/
 
 # test python files
 /test*.py
+post_callibrate.py
 
 # submission files
 /submission
