@@ -137,6 +137,7 @@ video/
 # json settings file
 /settings.json
 /pixel3.json
+/front_camera.json
 
 # test python files
 /test*.py
@@ -144,3 +145,6 @@ post_callibrate.py
 
 # submission files
 /submission
+
+# video files
+*.avi
