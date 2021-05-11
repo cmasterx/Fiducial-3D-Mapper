@@ -72,9 +72,9 @@ if '__main__' in __name__:
             pass
             # print('Returned true - corners: ', img)
         
-        flip = cv2.flip(img, 1)
+        # flip = cv2.flip(img, 1)
         
-        cv2.imshow('camera', flip)
+        cv2.imshow('camera', img)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
