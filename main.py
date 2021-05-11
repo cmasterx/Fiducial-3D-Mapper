@@ -171,6 +171,15 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
     renderer = pyrender.OffscreenRenderer(w,h)
     # viewer = pyrender.Viewer(scene)       # 3D viewer of scene
 
+    # Video Writer
+    video_writer = None
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    cam_dimensions = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    cam_fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    if cam_fps < 0:
+        # cannot obtain camera fps, so default to 30 fps
+        cam_fps = 30
+
     while cap.isOpened():
         # while video feed is available
         
@@ -278,10 +287,24 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
             elif key_press == ord('r'):
                 record = not record
 
-                if record:
-                    pass
-                    # if recording has just been enabled, create video writer
-                    # video_writer
+            # record option
+            if record:
+                if not was_recording:
+                    # if video was not recording before, create video writer
+                    video_writer = cv2.VideoWriter('recording.avi', fourcc, cam_fps, cam_dimensions)
+                    was_recording = True
+                
+                # record video
+                video_writer.write(img_draw)
+                
+            else:
+                if was_recording:
+                    if video_writer is not None:
+                        # video writer exists. Release video writer and delete
+                        video_writer.release()
+                        video_writer = None
+
+                    was_recording = False
 
 
 if '__main__' in __name__:
