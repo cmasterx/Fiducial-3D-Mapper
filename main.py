@@ -76,7 +76,7 @@ def draw_cube_img(img, marker_length, int_mtx, ext_mtx):
     for i, line in enumerate(lines_2D):
         cv2.line(img, line[0], line[1], colors[i], thicknesses[i])
     
-def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=False):
+def main(cap, cameraMatrix, distCoeffs, fps, marker_size, marker_units, flipFeed=False):
 
     # default parameters of AruCo
     ARUCO_PARAMS = aruco.DetectorParameters_create()
@@ -175,7 +175,7 @@ def main(cap, cameraMatrix, distCoeffs, marker_size, marker_units, flipFeed=Fals
     video_writer = None
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     cam_dimensions = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    cam_fps = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    cam_fps = cap.get(cv2.CAP_PROP_FRAME_COUNT) if fps is None else fps
     if cam_fps < 0:
         # cannot obtain camera fps, so default to 30 fps
         cam_fps = 30
@@ -319,9 +319,10 @@ if '__main__' in __name__:
     settings_filepath = os.path.join(prog_path, default_settings_filename)
 
     DEFAULT_CONFIG = {
-                'version': 1.2,
+                'version': 1.4,
                 'calibration': default_calibration_filename,
                 'video_source': 0,
+                'recording_fps': None,
                 'marker_size': 1.5,
                 'marker_units': 'in'
     }
@@ -397,5 +398,5 @@ if '__main__' in __name__:
             cam = cv2.VideoCapture(video_source)
 
     # send to main function
-    main(cam, cameraMatrix, distCoeffs, configs['marker_size'], configs['marker_units'])
+    main(cam, cameraMatrix, distCoeffs, configs['recording_fps'], configs['marker_size'], configs['marker_units'])
     
